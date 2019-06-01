@@ -7,12 +7,27 @@
 #include <iostream>
 #include <algorithm>
 #include <iterator>
+#include <fstream>
 
 struct Node{
     int value;
     int needs;
 
     Node(int v = 0, int n = 0): value{v}, needs{n} {}
+
+    friend std::ostream & operator<<( std::ostream& os_, const Node & p){
+        os_ << p.value << " " << p.needs << std::endl;
+        return os_;
+    }
+};
+
+struct Edge{
+
+    int weight;
+    int a;
+    int b;
+
+    Edge(int w = 0, int p = 0, int n = 0): weight{w}, a{p}, b{n} {}
 };
 
 struct Truck{
@@ -21,22 +36,72 @@ struct Truck{
     Truck(int c = 0): capacity{c} {}
 };
 
-struct Edge{
-
-    int weight;
-    Node * a;
-    Node * b;
-
-    Edge(int w = 0, Node * p = nullptr, Node * n = nullptr): weight{w}, a{p}, b{n} {}
-};
 
 class Vrp{
     private:
         Edge ** mat;
+        Truck * truck;
+        int sizeMat;
+        void readFile(std::string filename){
+            int c = 0;
+            int aux;
+            std::vector<Node> vec;
+            Node * n;
+            Edge * e;
+
+            std::string line;
+
+            std::ifstream file(filename);
+
+            std::getline(file, line);
+            truck = new Truck(stoi(line));
+
+            std::getline(file, line);
+            sizeMat = stoi(line);
+            
+            while(std::getline(file, line) and line.compare("#") != 0){
+                if(c == 0){
+                    aux = stoi(line);
+                    c++;
+                } else {
+                    n = new Node(aux, stoi(line));
+                    vec.push_back(*n);
+                    delete n;
+                    c = 0;
+                }
+            }
+            
+            
+            mat = new Edge * [sizeMat];
+            for(int i = 0; i < sizeMat; i++){
+                mat[i] = new Edge[sizeMat];
+            }
+            for(int i = 0; i < sizeMat; i++){
+                for(int k = i; k < sizeMat; k++){
+                    if(i == k){
+                        e = new Edge(0, vec[k].value, vec[k].value);
+                        mat[i][k] = *e;
+                        delete e;
+                    } else {
+                        getline(file, line);
+                        aux = stoi(line);
+
+                        e = new Edge(aux, vec[k].value, vec[i].value);
+                        mat[k][i] = *e;
+                        delete e;
+
+                        e = new Edge(aux, vec[i].value, vec[k].value);
+                        mat[i][k] = *e;
+                        delete e;
+                    }
+                }
+            }
+            file.close();
+        }
     public:
         Vrp(std::string filename){
             int tmp = 7;
-            int graph[][tmp] = { { 0, 10, 20, 25, 25, 20, 10},
+            /*int graph[][tmp] = { { 0, 10, 20, 25, 25, 20, 10},
                        { 10, 0, 12, 20, 25, 30, 20},
  		       { 20, 12, 0, 10, 11, 22, 30},
 		       { 25, 20, 10, 0, 2, 11, 25},
@@ -54,11 +119,24 @@ class Vrp{
             }
 
             Truck truck(3);
-            std::cout << VRP_NaiveSolution(mat, tmp, 0, truck) << std::endl;;
+            std::cout << VRP_NaiveSolution(mat, tmp, 0, truck) << std::endl;;*/
+            readFile(filename);
 
+            for(int i = 0; i < sizeMat; i++){
+                for(int y = 0; y < sizeMat; y++){
+                    std::cout << mat[i][y].a << " " << mat[i][y].b << "   ";
+                }
+                std::cout << std::endl;
+            }
 
         }
-        ~Vrp() = default;
+        ~Vrp(){
+            for(int i = 0; i < sizeMat; i++){
+                delete [] mat[i];
+            }
+            delete [] mat;
+            delete truck;
+        }
 
         int VRP_NaiveSolution(Edge ** mat_, int V, int s, Truck truck){ 
             // store all vertex apart from source vertex and clusterizes  
@@ -79,7 +157,7 @@ class Vrp{
            
             std::cout << vertex.size() << " tamanho" << std::endl;
             // store minimum weight 
-            int min_path = INT_MAX;
+            int min_path = __INT_MAX__;
             // store current path cost 
             int current_pathcost = 0; 
             int total_pathcost = 0;
@@ -91,7 +169,7 @@ class Vrp{
                 
                 //resets path in each iteration
                 current_pathcost = 0; 
-                min_path = INT_MAX;
+                min_path = __INT_MAX__;
 
                 // compute current path cost of the cluster 
                     k = s; 
