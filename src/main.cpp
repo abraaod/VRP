@@ -3,5 +3,5 @@
 int main(){
 
 
-    Vrp v("teste");
+    Vrp v("data/teste.vrp");
 }
