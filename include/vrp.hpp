@@ -8,15 +8,18 @@
 #include <algorithm>
 #include <iterator>
 #include <fstream>
+#include <math.h>
 
 struct Node{
     int value;
     int needs;
+    int x;
+    int y;
 
     Node(int v = 0, int n = 0): value{v}, needs{n} {}
 
     friend std::ostream & operator<<( std::ostream& os_, const Node & p){
-        os_ << p.value << " " << p.needs << std::endl;
+        os_ << p.value << " " << p.needs << " " << p.x << " " << p.y << " " << std::endl;
         return os_;
     }
 };
@@ -44,6 +47,7 @@ class Vrp{
         int sizeMat;
         std::vector<Node> vec;
         void readFile(std::string filename){
+            
             int c = 0;
             int aux;
             Node * n;
@@ -59,6 +63,8 @@ class Vrp{
             std::getline(file, line);
             sizeMat = stoi(line);
             
+            std::vector<std::string> aux_s;
+            int cont = 0;
             while(std::getline(file, line) and line.compare("#") != 0){
                 if(c == 0){
                     aux = stoi(line);
@@ -71,6 +77,18 @@ class Vrp{
                 }
             }
             
+            while(std::getline(file, line)){
+                if(cont < sizeMat){
+                    std::istringstream ss(line);
+                    for(std::string s; ss >> s;){
+                        aux_s.push_back(s);
+                    }
+                    vec[cont].x = stoi(aux_s[1]);
+                    vec[cont].y = stoi(aux_s[2]);
+                    aux_s.clear();
+                }
+                cont++;
+            }
             
             mat = new Edge * [sizeMat];
             for(int i = 0; i < sizeMat; i++){
@@ -83,8 +101,8 @@ class Vrp{
                         mat[i][k] = *e;
                         delete e;
                     } else {
-                        getline(file, line);
-                        aux = stoi(line);
+
+                        aux = (int) round(sqrt(pow(vec[i].x - vec[k].x, 2) + pow(vec[i].y - vec[k].y, 2)));
 
                         e = new Edge(aux, vec[k].value, vec[i].value);
                         mat[k][i] = *e;
@@ -99,8 +117,10 @@ class Vrp{
             file.close();
         }
     public:
-        Vrp(std::string filename){
-            int tmp = 7;
+        Vrp(std::vector<std::string> files){
+            for(int i = 0; i < files.size(); i++){
+                readFile(files[i]);
+            }
             /*int graph[][tmp] = { { 0, 10, 20, 25, 25, 20, 10},
                        { 10, 0, 12, 20, 25, 30, 20},
  		       { 20, 12, 0, 10, 11, 22, 30},
@@ -120,16 +140,21 @@ class Vrp{
 
             Truck truck(3);
             std::cout << VRP_NaiveSolution(mat, tmp, 0, truck) << std::endl;;*/
-            readFile(filename);
-            auto start = std::chrono::steady_clock::now();
-            std::cout << VRP_NaiveSolution(0) << " solution" << std::endl;
-            auto finish = std::chrono::steady_clock::now();
+            for(int i = 0; i < files.size();i ++){
+                readFile(files[i]);
+                auto start = std::chrono::steady_clock::now();
+                std::cout << VRP_NaiveSolution(0) << " solution " << files[i] << std::endl;
+                auto finish = std::chrono::steady_clock::now();
 
-            auto time = finish - start;
-            std::cout << std::chrono::duration <double, std::ratio<86400>> (time).count() << std::endl;
-            /*for(int i = 0; i < sizeMat; i++){
+                auto time = finish - start;
+                std::cout << std::chrono::duration <double, std::ratio<86400>> (time).count() << std::endl;
+                if(i < files.size()-1){
+                    clearVariables();
+                }
+            }
+           /*for(int i = 0; i < sizeMat; i++){
                 for(int y = 0; y < sizeMat; y++){
-                    std::cout << mat[i][y].a << " " << mat[i][y].b << "   ";
+                    std::cout << mat[i][y].weight << "   ";
                 }
                 std::cout << std::endl;
             }*/
@@ -143,6 +168,14 @@ class Vrp{
             delete truck;
         }
 
+        void clearVariables(){
+            for(int i = 0; i < sizeMat; i++){
+                delete [] mat[i];
+            }
+            delete [] mat;
+            delete truck;
+            vec.clear();
+        }
         int VRP_NaiveSolution(int s){ 
             // store all vertex apart from source vertex and clusterizes  
             std::vector<std::vector<int>> vertex;
@@ -175,7 +208,7 @@ class Vrp{
             //std::cout << vertex.size() << " tamanho" << std::endl;
             
             // store minimum weight 
-            int min_path = 1000000;
+            int min_path = __INT_MAX__;
             // store current path cost 
             int current_pathcost = 0; 
             int total_pathcost = 0;
@@ -187,7 +220,7 @@ class Vrp{
                 
                 //resets path in each iteration
                 current_pathcost = 0; 
-                min_path = 1000000;
+                min_path = __INT_MAX__;
 
                 // compute current path cost of the cluster 
                     k = s; 
