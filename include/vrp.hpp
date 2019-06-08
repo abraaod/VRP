@@ -66,7 +66,7 @@ class Vrp{
             std::vector<std::string> aux_s;
             int cont = 0;
             while(std::getline(file, line) and line.compare("#") != 0){
-                if(c == 0){
+                /*if(c == 0){
                     aux = stoi(line);
                     c++;
                 } else {
@@ -74,7 +74,15 @@ class Vrp{
                     vec.push_back(*n);
                     delete n;
                     c = 0;
+                }*/
+                std::istringstream ss(line);
+                for(std::string s; ss >> s;){
+                    aux_s.push_back(s);
                 }
+                n = new Node(stoi(aux_s[0]), stoi(aux_s[1]));
+                vec.push_back(*n);
+                delete n;
+                aux_s.clear();
             }
             
             while(std::getline(file, line)){
@@ -147,7 +155,7 @@ class Vrp{
                 auto finish = std::chrono::steady_clock::now();
 
                 auto time = finish - start;
-                std::cout << std::chrono::duration <double, std::ratio<86400>> (time).count() << std::endl;
+                std::cout << std::chrono::duration <double, std::ratio<60>> (time).count() << std::endl;
                 if(i < files.size()-1){
                     clearVariables();
                 }
@@ -205,7 +213,7 @@ class Vrp{
                 std::cout << std::endl;
             }*/
            
-            //std::cout << vertex.size() << " tamanho" << std::endl;
+            std::cout << vertex.size() << " trucks ";
             
             // store minimum weight 
             int min_path = __INT_MAX__;
