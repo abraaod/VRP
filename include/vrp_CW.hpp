@@ -9,7 +9,7 @@
 #include <iterator>
 #include <fstream>
 #include <math.h>
-#include <unordered_map>
+#include <unordered_set>
 
 struct Node{
     int value;
@@ -95,164 +95,142 @@ class vrp_CW{
         }
 
         class Route{
-            private:
-                int _capacity, _weight;
-	            double _cost, _savings;
+            
+        public:
+            struct saving{
+                int a;
+                int b;
+                int value;
 
-                void calculateSavings(){
-                    double originalCost = 0;
-		            double newCost = 0;
-		            double tempcost =0;
-		            Node * prev = nullptr;
+                saving(int a_, int b_, int value_) : a{a_}, b{b_}, value{value_}{}
 
-                    for(Node n: nodes){ 
-			            // Distance from Depot
-			            tempcost = sqrt((n.x*n.x)+(n.y*n.y));
-			            originalCost += (2.0*tempcost);
-
-			            if(prev != nullptr){
-				            // Distance from previous customer to this customer
-				            double x = (prev->x - n.x);
-				            double y = (prev->y - n.y);
-				            newCost += sqrt((x*x)+(y*y));
-                            prev = &n;
-			            }else{
-				            //If this is the first customer in the route, no change
-				            newCost += tempcost;
-                            prev = &n;
-			            }
-		            }
-		            newCost += tempcost;
-		            _cost = newCost;
-		            _savings = originalCost - newCost;
-                }
-
-            public:
-	            std::vector<Node> nodes;
-                
-                Route(int capacity){
-                    _capacity = capacity;
-                    _weight = 0;
-                    _cost  = 0;
-                    _savings = 0;
-                }
-
-                void addNode(Node a, bool order = false){
-                    if(order){
-                        nodes.insert(nodes.begin(), a);
-                    }else{
-                        nodes.push_back(a);
-                    }
-
-                    _weight += a.needs;
-
-                    calculateSavings();
-                }
-
-                int getWeight(){
-                    return _weight;
-                }
-
-                friend std::ostream & operator<<( std::ostream& os_, const Route p){
-                    os_ << p.nodes[0].value << " " << p.nodes[1].value << " " << p._savings << std::endl;
+                friend std::ostream & operator<<( std::ostream& os_, const saving & s){
+                    os_ << s.a << " " << s.b << " " << s.value << std::endl;
                     return os_;
                 }
-                
-                bool operator ==(const Route& r) const{
-                    return r._capacity == this->_capacity or r._weight == this->_weight or r._cost == this->_cost or r._savings == this->_savings;
-                }
-                bool operator !=(const Route& r) const{
-                    return !(*this == r);
-                }
+            };
 
-                class Compare{
-                    public:
-                        bool operator()(const Route a, const Route b) const{
-                            return a._savings < b._savings;
-                        }
-                };
+            std::vector<int> cost;
+            std::vector<saving> savings;
+            int totalCost = 0;
+
+            saving calculateSavings(int a, int b, std::vector<Node> &_vec){
+                int a_deposit = round(sqrt(pow(_vec[a].x -_vec[0].x,2) + pow(_vec[a].y - _vec[0].y,2)));
+                int b_deposit = round(sqrt(pow(_vec[b].x -_vec[0].x,2) + pow(_vec[b].y - _vec[0].y,2)));
+                int a_b = round(sqrt(pow(_vec[a].x -_vec[b].x,2) + pow(_vec[a].y - _vec[b].y,2)));
+                int _savings = a_deposit + b_deposit - a_b;
+                saving * s = new saving(a,b, _savings);
+                savings.push_back(*s);
+                delete s;
+
+                return savings.back();
+            }
+
+            void initialize(std::vector<Node> &_vec){
+                int _cost;
+                for(int i = 0; i < _vec.size(); i++){
+                    _cost = 2 * round(sqrt(pow(_vec[i].x - _vec[0].x, 2) + pow(_vec[i].y - _vec[0].y, 2)));
+                    cost.push_back(_cost);
+                    totalCost += _cost;
+                }
+            }
+
+            void printCost(){
+                std::copy(cost.begin(), cost.end(),std::ostream_iterator<double>(std::cout, " "));
+            }
+
+            class Compare{
+                public:
+                    bool operator()(const saving& a, const saving& b) const{
+                        return a.value < b.value;
+                    }
+            };
         };
 
     public:
         vrp_CW(std::string filename){
-            std::priority_queue<Route, std::vector<Route>, Route::Compare> pq_routes;
+            auto start = std::chrono::steady_clock::now();
             readFile(filename);
-            for(int i = 0; i < vec.size(); i++){
-                for(int j = i + 1; j < vec.size(); j ++){
-                    Route r(truck->capacity);
-                    r.addNode(vec[i]);
-                    r.addNode(vec[j]);
-                    pq_routes.push(r);
+            Route* r = new Route();
+            
+            std::priority_queue<Route::saving, std::vector<Route::saving>, Route::Compare> pq;
+            r->initialize(vec);
+            for(int i = 1; i < vec.size(); i++){
+                for(int j = i +1; j < vec.size(); j++){
+                    pq.push(r->calculateSavings(i,j,vec));
                 }
             }
 
-            std::vector<Route> routes;
-            routes.push_back(pq_routes.top());
-            pq_routes.pop();
-
-            outerloop : for(int i = 0; i < routes.size(); i++){
-                Route r = routes[0];
-                Node n1 = r.nodes[0];
-                Node n2 = r.nodes[r.nodes.size()-1];
-
-                for(Route ro : routes){
-                    Node nr1 = ro.nodes[0];
-                    Node nr2 = ro.nodes[ro.nodes.size()-1];
-
-                    bool edge = false;
-                    for(int a = 0; a < 2; a++){
-                        edge = !edge;
-                        Node e1 = (!edge) ? n1 : n2;
-					    Node e2 = (edge) ? n1 : n2;
-                        
-                        if(e1 == nr1 || e1 == nr1){
-                            if(e2.needs + ro.getWeight() <= truck->capacity){
-                                bool inNodes = false;
-                                for(auto it = ro.nodes.begin(); it < ro.nodes.end(); it++){
-                                    if(*it == e2){
-                                        inNodes = true;
-                                    }
-                                }
-                                if(!inNodes){
-                                    bool isTaken = false;
-                                    for(Route rr : routes){
-                                        bool inNodes2 = false;
-                                        for(auto it2 = ro.nodes.begin(); it2 < ro.nodes.end(); it2++){
-                                            if(*it2 == e2){
-                                                inNodes2 = true;
-                                            }
-                                        }
-                                        if(!inNodes2){
-                                            isTaken = true;
-                                            break;
-                                        }
-                                    }
-                                    if(isTaken){
-                                        if(n1 == nr1){
-                                            ro.addNode(e2, true);
-                                        } else {
-                                            ro.addNode(e2);
-                                        }
-                                    }
-                                }
-                                //abandoned.remove(e2);
-                                std::priority_queue<Route, std::vector<Route>, Route::Compare> aux;
-                                while(!pq_routes.empty()){
-                                    if(r != pq_routes.top()){
-                                        aux.push(pq_routes.top());
-                                    }
-                                    pq_routes.pop();
-                                }
-                                pq_routes = aux;
-							    i--;
-							    goto outerloop;
-                            }
-                        } 
-                    }
+            int totalcost = 0, a, b;
+            auto routes = generateRoutes(pq);
+            for(int i = 0; i < routes.size(); i++){
+                for(int j = 0; j < routes[i].size() - 1; j++){
+                    a = routes[i][j];
+                    b = routes[i][j+1];
+                    totalcost += round(sqrt(pow(vec[a].x - vec[b].x, 2) + pow(vec[a].y - vec[b].y, 2)));
                 }
+                totalcost += round(sqrt(pow(vec[routes[i][0]].x - vec[0].x, 2) + pow(vec[routes[i][0]].y - vec[0].y, 2)));
+                totalcost += round(sqrt(pow(vec[routes[i][routes[i].size()-1]].x - vec[0].x, 2) + pow(vec[routes[i][routes[i].size()-1]].y - vec[0].y, 2)));
             }
+
+            std::cout << routes.size() << " trucks " << totalcost << " Solution " << filename << std::endl;
+            auto finish = std::chrono::steady_clock::now();
+            auto time = finish - start;
+            std::cout << std::chrono::duration <double, std::ratio<60>> (time).count() << std::endl;
+            /*for(int i = 0; i < pq.size(); i++){
+                std::cout << pq.top();
+                pq.pop();
+            }
+            std::cout << r->totalCost << std::endl;*/
         }
 
+        std::vector<std::vector<int>>  generateRoutes(std::priority_queue<Route::saving, std::vector<Route::saving>, Route::Compare> & pq){
+            std::unordered_set<int> help;
+            std::vector<std::vector<int>> routes;
+            std::vector<int> aux;
+            int weight = 0, temp_weight;
+            
+            for(int i = 0; i < pq.size(); i++){
+                auto s = pq.top();
+                temp_weight = weight + vec[s.a].needs + vec[s.b].needs;
+                if(temp_weight <= truck->capacity){
+                    if(help.find(s.a) == help.end()){
+                        help.insert(s.a);
+                        aux.push_back(s.a);
+                        weight += vec[s.a].needs;
+                    }
+                    if(help.find(s.b) == help.end()){
+                        help.insert(s.b);
+                        aux.push_back(s.b);
+                        weight += vec[s.b].needs;
+                    }
+                    pq.pop();
+                } /* else if(temp_weight + vec[s.a].needs <= truck->capacity){
+                    if(help.find(s.a) == help.end()){
+                        help.insert(s.a);
+                        aux.push_back(s.a);
+                        weight += vec[s.a].needs;
+                    }
+                    pq.pop();
+                } else if(temp_weight + vec[s.b].needs <= truck->capacity){
+                    if(help.find(s.b) == help.end()){
+                        help.insert(s.b);
+                        aux.push_back(s.b);
+                        weight += vec[s.a].needs;
+                    }
+                    pq.pop();
+                }*/ else {
+                    routes.push_back(aux);
+                    aux.clear();
+                    weight = 0;
+                }
+            }
+            if(!aux.empty()){
+                routes.push_back(aux);
+            } 
+
+            return routes;
+        }
         ~vrp_CW() = default;
 };
 
