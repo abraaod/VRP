@@ -7,5 +7,6 @@ int main(int argc, char const * argv[]){
         files.push_back(argv[i]);
     }*/
     //std::copy(files.begin(), files.end(), std::ostream_iterator<std::string>(std::cout, " "));
-    vrp_CW v(argv[1]);
+    std::string file = argv[1];
+    vrp_CW v(file);
 }
