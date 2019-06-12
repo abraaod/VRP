@@ -1,16 +1,20 @@
-7 trucks 669 Solution data/E-n22-k4
-1.54607e-05
-5 trucks 1163 Solution data/E-n33-k4.vrp
-3.22156e-05
-6 trucks 1315 Solution data/E-n51-k5
-5.91007e-05
-10 trucks 2358 Solution data/E-n76-k8
-8.10242e-05
-8 trucks 2399 Solution data/E-n76-k7
-7.6161e-05
-13 trucks 2408 Solution data/E-n76-k10
-0.000101587
-21 trucks 2532 Solution data/E-n76-k14
-0.000114481
-20 trucks 2987 Solution data/E-n101-k14
-0.000161995
+10 trucks 1176 Solution data/A-n33-k6
+1.86999e-05
+5 trucks 1643 Solution data/A-n36-k5
+2.25085e-05
+6 trucks 1533 Solution data/A-n37-k5
+2.71661e-05
+9 trucks 1547 Solution data/A-n37-k6
+3.32645e-05
+7 trucks 1589 Solution data/A-n38-k5
+2.77346e-05
+6 trucks 1533 Solution data/A-n39-k6
+2.49912e-05
+6 trucks 1556 Solution data/A-n34-k5
+2.15772e-05
+6 trucks 1617 Solution data/A-n39-k5
+3.70824e-05
+8 trucks 1864 Solution data/A-n44-k6
+4.39962e-05
+8 trucks 2038 Solution data/A-n45-k6
+4.08401e-05
