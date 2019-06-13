@@ -113,7 +113,7 @@ class vrp_CW{
             std::vector<int> cost;
             std::vector<saving> savings;
             int totalCost = 0;
-
+            //calculates the savings between 2 pairs of clients nodes with depot 
             saving calculateSavings(int a, int b, std::vector<Node> &_vec){
                 int a_deposit = round(sqrt(pow(_vec[a].x -_vec[0].x,2) + pow(_vec[a].y - _vec[0].y,2)));
                 int b_deposit = round(sqrt(pow(_vec[b].x -_vec[0].x,2) + pow(_vec[b].y - _vec[0].y,2)));
@@ -125,7 +125,7 @@ class vrp_CW{
 
                 return savings.back();
             }
-
+            //initialize distance between each client node with depot
             void initialize(std::vector<Node> &_vec){
                 int _cost;
                 for(int i = 0; i < _vec.size(); i++){
@@ -154,6 +154,7 @@ class vrp_CW{
             Route* r = new Route();
             
             std::priority_queue<Route::saving, std::vector<Route::saving>, Route::Compare> pq;
+            //Calculate the savings and stores then in priority queue where thhe higher values will be in top
             r->initialize(vec);
             for(int i = 1; i < vec.size(); i++){
                 for(int j = i +1; j < vec.size(); j++){
@@ -163,12 +164,14 @@ class vrp_CW{
 
             int totalcost = 0, a, b;
             auto routes = generateRoutes(pq);
+             //Calculate the total cost by visiting all created routes
             for(int i = 0; i < routes.size(); i++){
                 for(int j = 0; j < routes[i].size() - 1; j++){
                     a = routes[i][j];
                     b = routes[i][j+1];
                     totalcost += round(sqrt(pow(vec[a].x - vec[b].x, 2) + pow(vec[a].y - vec[b].y, 2)));
                 }
+                //Adds to total cost the distance between first and last nodes, in a route, to depot
                 totalcost += round(sqrt(pow(vec[routes[i][0]].x - vec[0].x, 2) + pow(vec[routes[i][0]].y - vec[0].y, 2)));
                 totalcost += round(sqrt(pow(vec[routes[i][routes[i].size()-1]].x - vec[0].x, 2) + pow(vec[routes[i][routes[i].size()-1]].y - vec[0].y, 2)));
             }
@@ -177,11 +180,7 @@ class vrp_CW{
             auto finish = std::chrono::steady_clock::now();
             auto time = finish - start;
             std::cout << std::chrono::duration <double, std::ratio<60>> (time).count() << std::endl;
-            /*for(int i = 0; i < pq.size(); i++){
-                std::cout << pq.top();
-                pq.pop();
-            }
-            std::cout << r->totalCost << std::endl;*/
+           
         }
 
         std::vector<std::vector<int>>  generateRoutes(std::priority_queue<Route::saving, std::vector<Route::saving>, Route::Compare> & pq){
@@ -189,7 +188,8 @@ class vrp_CW{
             std::vector<std::vector<int>> routes;
             std::vector<int> aux;
             int weight = 0, temp_weight;
-            
+             /*Determine the first position in the list which can be added to one of the end of the route, adding the node and removing it from the list
+	        if the routte can't be expanded by the last form it chooses the first bound in the list to start a new route, and remove it from the list*/
             for(int i = 0; i < pq.size(); i++){
                 auto s = pq.top();
                 temp_weight = weight + vec[s.a].needs + vec[s.b].needs;
@@ -205,21 +205,7 @@ class vrp_CW{
                         weight += vec[s.b].needs;
                     }
                     pq.pop();
-                } /* else if(temp_weight + vec[s.a].needs <= truck->capacity){
-                    if(help.find(s.a) == help.end()){
-                        help.insert(s.a);
-                        aux.push_back(s.a);
-                        weight += vec[s.a].needs;
-                    }
-                    pq.pop();
-                } else if(temp_weight + vec[s.b].needs <= truck->capacity){
-                    if(help.find(s.b) == help.end()){
-                        help.insert(s.b);
-                        aux.push_back(s.b);
-                        weight += vec[s.a].needs;
-                    }
-                    pq.pop();
-                }*/ else {
+                } else {
                     routes.push_back(aux);
                     aux.clear();
                     weight = 0;
