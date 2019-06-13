@@ -8,6 +8,7 @@ Antes de compilar o algoritmo é necessário que você certifique-se de ter o g+
 Para compilar o algoritmo basta abrir a pasta do repositório no terminal do linux e executar:
 
 ```./compile_CW.sh``` - Caso deseje compilar o algoritmo de Clark & Wright
+
 ```./compile_VRP.sh``` - Caso deseje compilar o algoritmo do Caixeiro Viajante com uma heurística de clusterização
 
 ## Executar
