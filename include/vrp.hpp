@@ -66,15 +66,6 @@ class Vrp{
             std::vector<std::string> aux_s;
             int cont = 0;
             while(std::getline(file, line) and line.compare("#") != 0){
-                /*if(c == 0){
-                    aux = stoi(line);
-                    c++;
-                } else {
-                    n = new Node(aux, stoi(line));
-                    vec.push_back(*n);
-                    delete n;
-                    c = 0;
-                }*/
                 std::istringstream ss(line);
                 for(std::string s; ss >> s;){
                     aux_s.push_back(s);
@@ -129,25 +120,7 @@ class Vrp{
             for(int i = 0; i < files.size(); i++){
                 readFile(files[i]);
             }
-            /*int graph[][tmp] = { { 0, 10, 20, 25, 25, 20, 10},
-                       { 10, 0, 12, 20, 25, 30, 20},
- 		       { 20, 12, 0, 10, 11, 22, 30},
-		       { 25, 20, 10, 0, 2, 11, 25},
-		       { 25, 25, 11, 2, 0, 10, 20},
-		       { 20, 30, 22, 11, 10, 0, 12},
-		       { 10, 20, 30, 25, 20, 12, 0}};
-            mat = new Edge *[tmp];
-            Edge * aux;
-            for(int i =  0; i < tmp; i++){
-                mat[i] = new Edge [tmp];
-                for(int y = 0; y < tmp; y++){
-                    aux = new Edge(graph[i][y]);
-                    mat[i][y] = *aux;
-                }
-            }
-
-            Truck truck(3);
-            std::cout << VRP_NaiveSolution(mat, tmp, 0, truck) << std::endl;;*/
+           
             for(int i = 0; i < files.size();i ++){
                 readFile(files[i]);
                 auto start = std::chrono::steady_clock::now();
@@ -160,12 +133,6 @@ class Vrp{
                     clearVariables();
                 }
             }
-           /*for(int i = 0; i < sizeMat; i++){
-                for(int y = 0; y < sizeMat; y++){
-                    std::cout << mat[i][y].weight << "   ";
-                }
-                std::cout << std::endl;
-            }*/
 
         }
         ~Vrp(){
@@ -189,7 +156,10 @@ class Vrp{
             std::vector<std::vector<int>> vertex;
             std::vector<int> aux;
             int c = 0;
-
+             /* cluterizes by respecting truck's capacity, note that vec is a vector containing all the nodes 
+             containing the clientes and depot in our graph, we start first truck with 0 capacity and then 
+             client by client this truck capacity is increased, when a truck in a route is full the 
+             algorithm starts a new route*/
             for (int i = 0; i < sizeMat; i++){
                 if(i != s){
                     c += vec[i].needs;
@@ -206,12 +176,6 @@ class Vrp{
             if(!aux.empty()){
                 vertex.push_back(aux);
             }
-            /*for(int i = 0; i < vertex.size(); i++){
-                for(int k = 0; k < vertex[i].size(); k++){
-                    std::cout << vertex[i][k] << std::endl;
-                }
-                std::cout << std::endl;
-            }*/
            
             std::cout << vertex.size() << " trucks ";
             
@@ -220,9 +184,8 @@ class Vrp{
             // store current path cost 
             int current_pathcost = 0; 
             int total_pathcost = 0;
-            std::vector<int> path;
-            std::vector<int> true_path;
             int k;
+            //for each cluster of clients finds the cost for that and add it to the total cost
             for(int y = 0; y < vertex.size(); y++){
                 do { 
                 
@@ -235,22 +198,15 @@ class Vrp{
                     for (int i = 0; i < vertex[y].size(); i++) { 
                         current_pathcost += mat[k][vertex[y][i]].weight; 
                         k = vertex[y][i];
-                        //path.push_back(vertex[y][i]); 
                     } 
                     current_pathcost += mat[k][s].weight;
-                    //path.push_back(0); 
-  
-                // update minimum 
-                /*if(min_path > current_pathcost){
-                    true_path = path;
-                }*/
+                    
                 min_path = std::min(min_path, current_pathcost);
-                //path.clear(); 
-         
+                
+                //makes all permutations in a cluster 
                 } while (next_permutation(vertex[y].begin(), vertex[y].end()));
 
                 total_pathcost += min_path;
-                //std::copy(true_path.begin(), true_path.end(), std::ostream_iterator<int>(std::cout, " "));
             } 
   
         return total_pathcost;
